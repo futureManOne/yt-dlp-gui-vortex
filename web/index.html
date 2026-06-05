@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>yt-dlp 视频下载控制台</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="stars-bg"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 16.5V7.5L16 12L10 16.5Z" fill="url(#logo-grad)"/>
+                    <defs>
+                        <linearGradient id="logo-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#00F2FE"/>
+                            <stop offset="1" stop-color="#4FACFE"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="logo-text">
+                    <h1>yt-dlp <span class="badge">GUI Hub</span></h1>
+                    <p>高级多线程音视频下载控制台</p>
+                </div>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot green animate-pulse"></span>
+                <span class="status-text">服务已连接</span>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="app-content">
+            <!-- Left Side: Config & Input -->
+            <section class="panel-left">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <h2>输入视频链接</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <label for="video-urls">视频 URL (支持多行输入，一行一个链接)</label>
+                            <textarea id="video-urls" placeholder="https://www.youtube.com/watch?v=...&#10;https://www.bilibili.com/video/..." rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-header">
+                        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <h2>导入 Cookie 文件 (可选)</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="cookie-upload-zone" id="cookie-dropzone">
+                            <input type="file" id="cookie-file" accept=".txt" class="file-input">
+                            <div class="upload-placeholder">
+                                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p class="primary-text">将 cookies.txt 拖拽到此处，或 <span>点击上传</span></p>
+                                <p class="secondary-text">支持 Netscape / standard cookie 格式的文本文件</p>
+                            </div>
+                            <div class="upload-file-info hidden" id="file-info-container">
+                                <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <div class="file-meta">
+                                    <span class="file-name" id="uploaded-file-name">cookies.txt</span>
+                                    <span class="file-size" id="uploaded-file-size">3.5 KB</span>
+                                </div>
+                                <button type="button" class="btn-icon-danger" id="btn-remove-cookie" title="移除 Cookie 文件">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="browser-cookie-divider">
+                            <span>或</span>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="cookies-browser">从浏览器直接提取 Cookie (推荐，免去手动导出)</label>
+                            <select id="cookies-browser" class="select-input">
+                                <option value="">-- 不使用浏览器 Cookie --</option>
+                                <option value="chrome">Google Chrome</option>
+                                <option value="edge">Microsoft Edge</option>
+                                <option value="firefox">Mozilla Firefox</option>
+                                <option value="brave">Brave</option>
+                                <option value="opera">Opera</option>
+                                <option value="vivaldi">Vivaldi</option>
+                                <option value="safari">Safari (macOS)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-header">
+                        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.5 1z"></path>
+                        </svg>
+                        <h2>常规设置</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <label for="download-dir">下载保存目录 (绝对路径)</label>
+                            <div class="dir-input-wrapper">
+                                <input type="text" id="download-dir" placeholder="加载中...">
+                                <button type="button" class="btn-secondary-small" id="btn-use-default" title="恢复默认工作目录">默认</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btn-start-download">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    <span>一键高速下载</span>
+                </button>
+            </section>
+
+            <!-- Right Side: Monitoring & Tasks -->
+            <section class="panel-right">
+                <div class="glass-card flex-grow">
+                    <div class="card-header justify-between">
+                        <div class="header-title">
+                            <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            <h2>任务监视器</h2>
+                        </div>
+                        <div class="header-actions">
+                            <button id="btn-clear-completed" class="btn-text" title="清除已完成和已取消的任务">清除记录</button>
+                        </div>
+                    </div>
+                    <div class="card-body list-body scrollbar" id="tasks-container">
+                        <!-- Task cards will be inserted here dynamically -->
+                        <div class="empty-state" id="empty-state">
+                            <svg class="empty-icon animate-float" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <h3>暂无下载任务</h3>
+                            <p>在左侧输入视频链接并点击下载，在此处查看实时进度</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Frontend Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
