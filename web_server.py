@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Global task storage
 TASKS = {}
 TASKS_LOCK = threading.Lock()
+ACTIVE_PORT = None
 
 def clean_log_msg(msg):
     msg = msg.rstrip()
@@ -195,9 +196,15 @@ def download_worker(task_id, urls, cookie_data, cookies_from_browser, download_d
                 pass
 
 class WebHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        super().end_headers()
+
     def translate_path(self, path):
-        # Route static requests to the 'web' subfolder
-        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
+        # Route static requests to the 'web/dist' subfolder
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web', 'dist')
         relative_path = path.lstrip('/')
         # Security check: prevent directory traversal
         clean_path = os.path.normpath(relative_path)
@@ -362,10 +369,12 @@ class WebHandler(SimpleHTTPRequestHandler):
 class ThreadedHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
-def run_server(port=8080):
+def run_server(port=8000):
+    global ACTIVE_PORT
     while port < 65535:
         try:
             server = ThreadedHTTPServer(('0.0.0.0', port), WebHandler)
+            ACTIVE_PORT = port
             print(f"==================================================")
             print(f" yt-dlp GUI 控制台服务已成功启动！")
             print(f" 请使用浏览器打开以下链接：")
