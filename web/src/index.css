@@ -405,6 +405,17 @@ body {
     padding-right: 0.25rem;
 }
 
+.tasks-list.empty {
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.tasks-list.empty .empty-state {
+    padding: 0;
+    flex-grow: 0;
+}
+
 /* Glassmorphism Card Style (Task cards) */
 .glass-card {
     background: var(--bg-card);
@@ -762,9 +773,10 @@ textarea:focus, input[type="text"]:focus, select:focus {
 }
 
 .empty-icon {
-    width: 3rem;
-    height: 3rem;
-    color: rgba(255, 255, 255, 0.05);
+    width: 3.5rem;
+    height: 3.5rem;
+    color: rgba(0, 242, 254, 0.15);
+    margin-bottom: 0.5rem;
 }
 
 .animate-float {

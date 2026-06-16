@@ -549,7 +549,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="tasks-list scrollbar">
+          <div className={`tasks-list scrollbar ${visibleTasks.length === 0 ? 'empty' : ''}`}>
             {visibleTasks.length === 0 ? (
               <div className="empty-state">
                 <svg className="empty-icon animate-float" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
