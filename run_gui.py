@@ -100,7 +100,7 @@ def launch_gui():
     # 3. 创建桌面窗口并启动 (在 Windows 上使用 native WebView2/Edge)
     api = Api()
     window = webview.create_window(
-        title="yt-dlp 视频下载助手",
+        title="Vortex Downloader",
         url=f"http://127.0.0.1:{bound_port}",
         width=1024,
         height=768,

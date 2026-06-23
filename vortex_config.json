@@ -3,5 +3,8 @@
     "quality": "1080p",
     "format": "mkv_mp4",
     "cookies_from_browser": "",
-    "cookie_file_info": null
+    "cookie_file_info": {
+        "name": "www.bilibili.com_cookies (1).txt",
+        "size": 2511
+    }
 }

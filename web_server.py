@@ -681,14 +681,28 @@ class WebHandler(SimpleHTTPRequestHandler):
                     except Exception:
                         pass
                 
+                download_dir = cfg.get('download_dir', os.getcwd())
+                free_space = None
+                total_space = None
+                try:
+                    import shutil
+                    if os.path.exists(download_dir):
+                        total, used, free = shutil.disk_usage(download_dir)
+                        free_space = free
+                        total_space = total
+                except Exception:
+                    pass
+
                 config = {
                     "default_download_dir": os.getcwd(),
-                    "download_dir": cfg.get('download_dir', os.getcwd()),
+                    "download_dir": download_dir,
                     "quality": cfg.get('quality', '1080p'),
                     "format": cfg.get('format', 'mkv_mp4'),
                     "cookies_from_browser": cfg.get('cookies_from_browser', ''),
                     "cookie_file_info": cfg.get('cookie_file_info', None),
-                    "cookie_data": cookie_data
+                    "cookie_data": cookie_data,
+                    "free_space": free_space,
+                    "total_space": total_space
                 }
                 self.send_json_response(config)
             elif self.path.startswith('/api/select-dir'):
