@@ -1354,13 +1354,19 @@ textarea:focus, input[type="text"]:focus, select:focus {
 
 /* Premium Theme & UI/UX Optimizations Overrides */
 
-/* Core layout variables overrides */
+/* Core layout variables defaults */
 :root {
-    --bg-dark: #040814 !important; /* Space black background */
-    --bg-card: rgba(10, 20, 38, 0.6) !important; /* Ultra glassy cards */
-    --border-color: rgba(0, 242, 254, 0.15) !important; /* Elegant cyan borders */
-    --border-hover: rgba(0, 242, 254, 0.45) !important;
-    --primary-grad: linear-gradient(135deg, #00F2FE 0%, #0077FF 50%, #7F00FF 100%) !important;
+    --bg-dark: #040814; /* Space black background */
+    --bg-card: rgba(10, 20, 38, 0.6); /* Ultra glassy cards */
+    --border-color: rgba(0, 242, 254, 0.15); /* Elegant cyan borders */
+    --border-hover: rgba(0, 242, 254, 0.45);
+    --primary-grad: linear-gradient(135deg, #00F2FE 0%, #0077FF 50%, #7F00FF 100%);
+    
+    --brand-bg: linear-gradient(135deg, rgba(0, 242, 254, 0.08) 0%, rgba(127, 0, 255, 0.08) 100%);
+    --brand-border: rgba(0, 242, 254, 0.25);
+    --input-bg: rgba(3, 6, 15, 0.7);
+    --console-bg: #02040a;
+    --empty-bg: rgba(10, 20, 38, 0.3);
 }
 
 /* Background Stars and Orbs adjustments */
@@ -1394,25 +1400,25 @@ textarea:focus, input[type="text"]:focus, select:focus {
 
 /* Sidebar brand section enhancement */
 .brand-section {
-    background: linear-gradient(135deg, rgba(0, 242, 254, 0.08) 0%, rgba(127, 0, 255, 0.08) 100%) !important;
+    background: var(--brand-bg) !important;
     border-radius: 12px !important;
     padding: 0.9rem !important;
-    border: 1px solid rgba(0, 242, 254, 0.25) !important;
+    border: 1px solid var(--brand-border) !important;
     margin-bottom: 0.75rem !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Glass card styling and border glows */
 .glass-card {
-    background: rgba(10, 20, 38, 0.65) !important;
-    border: 1px solid rgba(0, 242, 254, 0.15) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 16px !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
     transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease !important;
 }
 
 .glass-card:hover {
-    border-color: rgba(0, 242, 254, 0.45) !important;
+    border-color: var(--border-hover) !important;
     box-shadow: 0 15px 50px rgba(0, 0, 0, 0.65), 0 0 25px rgba(0, 242, 254, 0.2) !important;
     transform: translateY(-3px) !important;
 }
@@ -1430,8 +1436,8 @@ textarea:focus, input[type="text"]:focus, select:focus {
 
 /* Terminal retro console styling */
 .log-console {
-    background: #02040a !important;
-    border: 1px solid rgba(0, 242, 254, 0.2) !important;
+    background: var(--console-bg) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 10px !important;
     box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.95) !important;
     padding: 0.85rem !important;
@@ -1474,8 +1480,8 @@ textarea:focus, input[type="text"]:focus, select:focus {
 }
 
 .empty-state {
-    background: rgba(10, 20, 38, 0.3) !important;
-    border: 1.5px dashed rgba(0, 242, 254, 0.15) !important;
+    background: var(--empty-bg) !important;
+    border: 1.5px dashed var(--border-color) !important;
     border-radius: 20px !important;
     padding: 5rem 3rem !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
@@ -1515,7 +1521,7 @@ textarea:focus, input[type="text"]:focus, select:focus {
 /* Premium Task Card side border highlights */
 .task-card {
     border-left: 5px solid #00F2FE !important;
-    background: rgba(10, 20, 38, 0.5) !important;
+    background: var(--bg-card) !important;
     border-radius: 12px !important;
 }
 .task-card.pending {
@@ -1536,10 +1542,11 @@ textarea:focus, input[type="text"]:focus, select:focus {
 
 /* Premium styling overrides for Select Inputs and Dropdowns */
 textarea, input[type="text"], select {
-    background: rgba(3, 6, 15, 0.7) !important;
-    border: 1.5px solid rgba(0, 242, 254, 0.15) !important;
+    background: var(--input-bg) !important;
+    border: 1.5px solid var(--border-color) !important;
     border-radius: 8px !important;
     font-size: 0.85rem !important;
+    color: var(--text-main) !important;
 }
 
 textarea:focus, input[type="text"]:focus, select:focus {
@@ -1607,9 +1614,9 @@ select option {
 
 /* Sidebar styling modifications */
 .sidebar {
-    background: rgba(5, 10, 24, 0.85) !important;
-    border: 1px solid rgba(0, 242, 254, 0.15) !important;
-    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.6) !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3) !important;
     border-radius: 16px !important;
 }
 
@@ -1630,10 +1637,10 @@ select option {
 /* 1. Left Nav Sidebar styling */
 .nav-sidebar {
     width: 76px;
-    background: rgba(5, 10, 24, 0.75);
+    background: var(--bg-card) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 242, 254, 0.15);
+    border: 1px solid var(--border-color) !important;
     border-radius: 16px;
     display: flex;
     flex-direction: column;
@@ -1642,7 +1649,7 @@ select option {
     gap: 2rem;
     flex-shrink: 0;
     transition: var(--transition-smooth);
-    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.4);
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.3);
 }
 
 .nav-sidebar:hover {
@@ -1776,8 +1783,8 @@ select option {
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
-    border: 1px solid rgba(0, 242, 254, 0.15) !important;
-    background: rgba(5, 10, 24, 0.6) !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--bg-card) !important;
 }
 
 .card-header-with-icon {
@@ -2018,8 +2025,8 @@ select option {
     padding: 2rem !important;
     gap: 1.5rem;
     overflow-y: auto;
-    border: 1px solid rgba(0, 242, 254, 0.15) !important;
-    background: rgba(5, 10, 24, 0.7) !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--bg-card) !important;
 }
 
 .board-header {
@@ -2488,3 +2495,199 @@ select option {
         gap: 1rem !important;
     }
 }
+
+/* Theme variables customization */
+.app-container {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    transition: background-color 0.5s ease, color 0.3s ease;
+}
+
+/* 1. Cyber Black Theme (Default) */
+.theme-cyber {
+    /* Uses default root variables */
+}
+
+/* 2. Midnight Ocean Theme */
+.theme-ocean {
+    --bg-dark: #060F1E;
+    --bg-card: rgba(9, 24, 48, 0.5);
+    --border-color: rgba(0, 168, 255, 0.12);
+    --border-hover: rgba(0, 168, 255, 0.5);
+    
+    --primary-grad: linear-gradient(135deg, #00d2ff 0%, #00a8ff 100%);
+    --primary-glow: 0 0 20px rgba(0, 210, 255, 0.3);
+    
+    --text-main: #F0F6FC;
+    --text-sec: #8B9BB4;
+    --text-mute: #5A6D85;
+
+    --brand-bg: linear-gradient(135deg, rgba(0, 168, 255, 0.08) 0%, rgba(0, 82, 204, 0.08) 100%);
+    --brand-border: rgba(0, 168, 255, 0.2);
+    --input-bg: rgba(6, 15, 30, 0.7);
+    --console-bg: #030a16;
+    --empty-bg: rgba(9, 24, 48, 0.25);
+}
+
+/* 3. Sakura Glow Theme */
+.theme-sakura {
+    --bg-dark: #1E0F1D;
+    --bg-card: rgba(43, 15, 39, 0.45);
+    --border-color: rgba(255, 105, 180, 0.15);
+    --border-hover: rgba(255, 105, 180, 0.6);
+    
+    --primary-grad: linear-gradient(135deg, #FF69B4 0%, #FFA07A 100%);
+    --primary-glow: 0 0 20px rgba(255, 105, 180, 0.35);
+    
+    --text-main: #FFF0F5;
+    --text-sec: #E6B5D7;
+    --text-mute: #A6739B;
+
+    --brand-bg: linear-gradient(135deg, rgba(255, 105, 180, 0.08) 0%, rgba(255, 160, 122, 0.08) 100%);
+    --brand-border: rgba(255, 105, 180, 0.25);
+    --input-bg: rgba(30, 15, 29, 0.7);
+    --console-bg: #140713;
+    --empty-bg: rgba(43, 15, 39, 0.25);
+}
+
+/* 4. Light Glassmorphism Theme (Minimalist Frosted White) */
+.theme-light {
+    --bg-dark: #F3F4F6;
+    --bg-card: rgba(255, 255, 255, 0.65);
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-hover: rgba(0, 122, 255, 0.45);
+    
+    --primary-grad: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+    --success-grad: linear-gradient(135deg, #34C759 0%, #30B0C7 100%);
+    --danger-grad: linear-gradient(135deg, #FF3B30 0%, #FF453A 100%);
+    --warning-grad: linear-gradient(135deg, #FF9500 0%, #FFCC00 100%);
+    --neutral-grad: linear-gradient(135deg, #8E8E93 0%, #AEAEB2 100%);
+    
+    --primary-glow: 0 8px 24px rgba(0, 122, 255, 0.15);
+    --success-glow: 0 8px 24px rgba(52, 199, 89, 0.15);
+    --danger-glow: 0 8px 24px rgba(255, 59, 48, 0.15);
+    
+    --text-main: #1D1D1F;
+    --text-sec: #4B5563;
+    --text-mute: #8E8E93;
+
+    --brand-bg: linear-gradient(135deg, rgba(0, 122, 255, 0.06) 0%, rgba(88, 86, 214, 0.06) 100%);
+    --brand-border: rgba(0, 0, 0, 0.06);
+    --input-bg: rgba(255, 255, 255, 0.75);
+    --console-bg: #f9fafb;
+    --empty-bg: rgba(255, 255, 255, 0.4);
+}
+
+/* Adjust visual elements for Light Theme compatibility */
+.theme-light .glow-orb {
+    opacity: 0.04 !important;
+}
+.theme-light .scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+.theme-light .scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+.theme-light .content-board::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1) !important;
+}
+.theme-light .stars-bg {
+    opacity: 0 !important;
+}
+.theme-light option {
+    background: #FFFFFF !important;
+    color: #1D1D1F !important;
+}
+.theme-light .task-title,
+.theme-light .section-title,
+.theme-light h2,
+.theme-light h3,
+.theme-light h4,
+.theme-light .stat-value {
+    color: #1D1D1F !important;
+}
+.theme-light .brand-section {
+    background: rgba(0, 122, 255, 0.05) !important;
+    border: 1px solid rgba(0, 122, 255, 0.15) !important;
+}
+.theme-light .logo-text h1 {
+    background: var(--primary-grad) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+.theme-light .logo-text p {
+    color: #556272 !important;
+}
+.theme-light .parsed-preview-card div {
+    color: #1D1D1F !important;
+}
+.theme-light .browser-extract-alert {
+    background: rgba(52, 199, 89, 0.1) !important;
+    color: #1D8A3F !important;
+    border: 1px solid rgba(52, 199, 89, 0.2) !important;
+}
+.theme-light .btn-outline {
+    border: 1px solid rgba(0, 122, 255, 0.3) !important;
+    color: #007AFF !important;
+}
+.theme-light .btn-outline:hover {
+    background: rgba(0, 122, 255, 0.08) !important;
+}
+.theme-light .btn-textarea-clear {
+    color: #8E8E93 !important;
+}
+.theme-light .btn-textarea-clear:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #1D1D1F !important;
+}
+.theme-light .nav-item {
+    color: #4B5563;
+}
+.theme-light .nav-item.active {
+    background: rgba(0, 122, 255, 0.08);
+    color: #007AFF;
+}
+.theme-light .nav-item:hover:not(.active) {
+    background: rgba(0, 0, 0, 0.04);
+}
+.theme-light .empty-state h3,
+.theme-light .empty-state p {
+    color: #4B5563 !important;
+}
+
+.theme-light .settings-section-card,
+.theme-light .sidebar-group-card,
+.theme-light .mini-stat-item,
+.theme-light .dashboard-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-light .title-sub-icon,
+.theme-light .section-icon,
+.theme-light .main-icon,
+.theme-light .card-title-icon,
+.theme-light .board-header-icon {
+    color: #007AFF !important;
+    filter: none !important;
+}
+
+.theme-light .progress-percent.primary {
+    color: #007AFF !important;
+}
+
+.theme-light .logo-area img {
+    border: 1px solid rgba(0, 122, 255, 0.25) !important;
+}
+
+.theme-light .log-console {
+    color: #4B5563 !important;
+}
+.theme-light .log-line {
+    color: #4B5563 !important;
+}
+.theme-light .log-line:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #1D1D1F !important;
+}
+
