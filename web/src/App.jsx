@@ -9,7 +9,11 @@ export default function App() {
   const [cookieData, setCookieData] = useState('');
   const [cookieFileInfo, setCookieFileInfo] = useState(null); // { name, size }
   const [selectedQuality, setSelectedQuality] = useState('1080p'); // default quality selection
+  const [selectedFormat, setSelectedFormat] = useState('mkv_mp4');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [parsedInfo, setParsedInfo] = useState(null);
+  const [selectedResolution, setSelectedResolution] = useState('');
 
   // Sidebar Accordion States
   const [isCookiesOpen, setIsCookiesOpen] = useState(true);
@@ -51,7 +55,18 @@ export default function App() {
         if (response.ok) {
           const data = await response.json();
           setDefaultDownloadDir(data.default_download_dir);
-          setDownloadDir(data.default_download_dir);
+          setDownloadDir(data.download_dir || data.default_download_dir);
+          setSelectedQuality(data.quality || '1080p');
+          setSelectedFormat(data.format || 'mkv_mp4');
+          if (data.cookies_from_browser) {
+            setCookiesBrowser(data.cookies_from_browser);
+          }
+          if (data.cookie_file_info) {
+            setCookieFileInfo(data.cookie_file_info);
+          }
+          if (data.cookie_data) {
+            setCookieData(data.cookie_data);
+          }
         }
       } catch (err) {
         console.error('获取默认配置失败:', err);
@@ -156,10 +171,30 @@ export default function App() {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setCookieData(e.target.result);
-      setCookieFileInfo({ name: file.name, size: file.size });
-      showToast('Cookie 文件载入成功', 'success');
+    reader.onload = async (e) => {
+      const text = e.target.result;
+      const fileInfo = { name: file.name, size: file.size };
+      try {
+        const response = await fetch('/api/cookie', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cookie_data: text,
+            cookie_file_info: fileInfo
+          })
+        });
+        if (response.ok) {
+          setCookieData(text);
+          setCookieFileInfo(fileInfo);
+          showToast('Cookie 文件保存并载入成功', 'success');
+        } else {
+          showToast('保存 Cookie 到服务器失败', 'error');
+        }
+      } catch (err) {
+        showToast('无法发送 Cookie 到服务器', 'error');
+      }
     };
     reader.onerror = () => {
       showToast('无法读取文件内容', 'error');
@@ -168,11 +203,70 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  const resetCookieUpload = () => {
-    setCookieData('');
-    setCookieFileInfo(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const resetCookieUpload = async () => {
+    try {
+      const response = await fetch('/api/cookie/clear', { method: 'POST' });
+      if (response.ok) {
+        setCookieData('');
+        setCookieFileInfo(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        showToast('已从服务器清除 Cookie', 'info');
+      } else {
+        showToast('清除服务器 Cookie 失败', 'error');
+      }
+    } catch (err) {
+      showToast('无法请求服务器清除 Cookie', 'error');
+    }
+  };
+
+  // Parse Video metadata and resolutions
+  const handleParseVideo = async () => {
+    const parsedUrls = urls
+      .split('\n')
+      .map((u) => u.trim())
+      .filter((u) => u.length > 0);
+
+    if (parsedUrls.length === 0) {
+      showToast('请输入视频链接进行解析', 'error');
+      return;
+    }
+    if (parsedUrls.length > 1) {
+      showToast('解析分辨率目前仅支持单个视频链接', 'warning');
+      return;
+    }
+
+    setIsParsing(true);
+    setParsedInfo(null);
+    setSelectedResolution('');
+    try {
+      const response = await fetch('/api/parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: parsedUrls[0],
+          cookie_data: cookieData,
+          cookies_from_browser: cookiesBrowser,
+        }),
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setParsedInfo({ ...result, url: parsedUrls[0] });
+        if (result.resolutions && result.resolutions.length > 0) {
+          setSelectedResolution(result.resolutions[0].height.toString());
+        }
+        showToast('视频解析成功', 'success');
+      } else {
+        showToast(result.error || '解析视频失败，请检查链接或网络', 'error');
+      }
+    } catch (err) {
+      console.error('解析视频失败:', err);
+      showToast('网络连接失败，请检查后端服务', 'error');
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -190,23 +284,33 @@ export default function App() {
 
     setIsSubmitting(true);
     try {
+      const payload = {
+        urls: parsedUrls,
+        cookie_data: cookieData,
+        cookies_from_browser: cookiesBrowser,
+        download_dir: downloadDir,
+        quality: selectedQuality,
+        format: selectedFormat,
+      };
+
+      if (parsedInfo && parsedUrls.length === 1 && parsedInfo.url === parsedUrls[0]) {
+        payload.selected_height = parseInt(selectedResolution);
+      }
+
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          urls: parsedUrls,
-          cookie_data: cookieData,
-          cookies_from_browser: cookiesBrowser,
-          download_dir: downloadDir,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
       if (response.ok && result.success) {
         showToast('任务已成功发起到后台', 'success');
         setUrls(''); // Clean URL text area
+        setParsedInfo(null);
+        setSelectedResolution('');
       } else {
         showToast(result.error || '创建下载任务失败', 'error');
       }
@@ -248,6 +352,83 @@ export default function App() {
       }
     } catch (err) {
       showToast('网络连接错误', 'error');
+    }
+  };
+
+  const saveSettingsSilent = async (newSettings) => {
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newSettings),
+      });
+    } catch (err) {
+      console.error('自动保存设置失败:', err);
+    }
+  };
+
+  // Browse directory dialog
+  const handleBrowseDir = async () => {
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.select_folder) {
+      try {
+        const selected = await window.pywebview.api.select_folder(downloadDir || defaultDownloadDir);
+        if (selected) {
+          setDownloadDir(selected);
+          saveSettingsSilent({ download_dir: selected });
+          showToast(`已选择目录: ${selected}`, 'success');
+        }
+      } catch (err) {
+        console.error('调用原生选择目录失败:', err);
+        showToast('选择目录失败', 'error');
+      }
+    } else {
+      try {
+        const response = await fetch(`/api/select-dir?current=${encodeURIComponent(downloadDir || defaultDownloadDir)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.dir) {
+            setDownloadDir(data.dir);
+            saveSettingsSilent({ download_dir: data.dir });
+            showToast(`已选择目录: ${data.dir}`, 'success');
+          }
+        } else {
+          showToast('当前环境不支持弹窗选择目录，请手动输入路径', 'warning');
+        }
+      } catch (err) {
+        showToast('当前环境不支持弹窗选择目录，请手动输入路径', 'warning');
+      }
+    }
+  };
+
+  // Save settings to persistent configuration
+  const handleSaveSettings = async () => {
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          download_dir: downloadDir,
+          quality: selectedQuality,
+          format: selectedFormat,
+        }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          showToast('设置保存成功', 'success');
+        } else {
+          showToast('保存设置失败', 'error');
+        }
+      } else {
+        showToast('保存设置请求失败', 'error');
+      }
+    } catch (err) {
+      console.error('保存设置失败:', err);
+      showToast('网络连接失败，请检查后端服务', 'error');
     }
   };
 
@@ -327,28 +508,104 @@ export default function App() {
               </svg>
               Add Video URL
             </h2>
-            <div className="input-group">
+            <div className="input-group" style={{ position: 'relative' }}>
               <textarea
                 id="video-urls"
                 placeholder="Paste Video Link here..."
                 rows="4"
                 value={urls}
                 onChange={(e) => setUrls(e.target.value)}
+                style={{ paddingRight: urls ? '2.2rem' : '0.85rem' }}
               ></textarea>
+              {urls && (
+                <button
+                  type="button"
+                  className="btn-textarea-clear animate-hover"
+                  onClick={() => setUrls('')}
+                  title="Clear Input"
+                  style={{
+                    position: 'absolute',
+                    right: '0.5rem',
+                    top: '1.8rem',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-mute)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.25rem',
+                    borderRadius: '50%',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.85rem', height: '0.85rem' }}>
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              )}
             </div>
-            <button
-              className="btn-primary animate-hover"
-              id="btn-start-download"
-              onClick={handleStartDownload}
-              disabled={isSubmitting}
-            >
-              <span>{isSubmitting ? 'Submitting...' : 'START DOWNLOAD'}</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.95rem', height: '0.95rem' }}>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-            </button>
+            <div className="textarea-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-sec)', marginTop: '0.1rem', padding: '0 0.2rem' }}>
+              <span>{urls.split('\n').map(u => u.trim()).filter(Boolean).length} links detected</span>
+            </div>
+            <div className="btn-group" style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+              <button
+                type="button"
+                className="btn-primary animate-hover"
+                onClick={handleParseVideo}
+                disabled={isParsing || isSubmitting}
+                style={{ width: '100%', padding: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', fontSize: '0.82rem', borderRadius: '0.375rem', minHeight: '2.5rem', margin: 0 }}
+              >
+                <span>{isParsing ? '解析中...' : '解析视频'}</span>
+              </button>
+            </div>
+
+            {parsedInfo && (
+              <div className="parsed-preview-card animate-float" style={{ marginTop: '0.75rem', padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  {parsedInfo.thumbnail && (
+                    <img src={parsedInfo.thumbnail} alt="thumbnail" style={{ width: '80px', height: '45px', objectFit: 'cover', borderRadius: '0.25rem', border: '1px solid rgba(255, 255, 255, 0.1)' }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }} title={parsedInfo.title}>
+                      {parsedInfo.title}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: '0.15rem' }}>
+                      时长: {Math.floor(parsedInfo.duration / 60)}分{parsedInfo.duration % 60}秒
+                    </div>
+                  </div>
+                </div>
+                <div className="input-group" style={{ marginBottom: '0.75rem' }}>
+                  <label style={{ fontSize: '0.7rem', color: '#aaa', marginBottom: '0.25rem', display: 'block' }}>选择分辨率</label>
+                  <select
+                    value={selectedResolution}
+                    onChange={(e) => setSelectedResolution(e.target.value)}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.5rem', width: '100%', borderRadius: '0.25rem', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', outline: 'none' }}
+                  >
+                    {parsedInfo.resolutions && parsedInfo.resolutions.map((r) => (
+                      <option key={r.height} value={r.height.toString()} style={{ background: '#18181b' }}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  className="btn-primary animate-hover"
+                  id="btn-start-download"
+                  onClick={handleStartDownload}
+                  disabled={isSubmitting || isParsing}
+                  style={{ width: '100%', margin: 0, padding: '0.55rem', fontSize: '0.82rem', borderRadius: '0.375rem', minHeight: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
+                >
+                  <span>{isSubmitting ? '提交中...' : '开始下载'}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '0.85rem', height: '0.85rem' }}>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Section 2: Cookies Import (Collapsible) */}
@@ -431,7 +688,11 @@ export default function App() {
                 <select
                   id="cookies-browser"
                   value={cookiesBrowser}
-                  onChange={(e) => setCookiesBrowser(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCookiesBrowser(val);
+                    saveSettingsSilent({ cookies_from_browser: val });
+                  }}
                   style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}
                 >
                   <option value="">-- Extract cookies from browser --</option>
@@ -469,7 +730,15 @@ export default function App() {
             <div className={`accordion-content ${isSettingsOpen ? 'open' : ''}`}>
               <div className="input-group">
                 <label>Format</label>
-                <select style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}>
+                <select 
+                  value={selectedFormat} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedFormat(val);
+                    saveSettingsSilent({ format: val });
+                  }}
+                  style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}
+                >
                   <option value="mkv_mp4">MKV, MP4</option>
                   <option value="mp4">MP4 Only</option>
                   <option value="mkv">MKV Only</option>
@@ -477,20 +746,7 @@ export default function App() {
                 </select>
               </div>
 
-              <div className="input-group">
-                <label>Quality</label>
-                <div className="quality-selector">
-                  {['4K', 'Ultra', '1080p', '720p'].map((q) => (
-                    <button
-                      key={q}
-                      className={`quality-btn ${selectedQuality === q ? 'active' : ''}`}
-                      onClick={() => setSelectedQuality(q)}
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Quality settings removed - resolution is selected per-video on parse */}
 
               <div className="input-group">
                 <label htmlFor="download-dir">Path</label>
@@ -500,14 +756,56 @@ export default function App() {
                     id="download-dir"
                     value={downloadDir}
                     onChange={(e) => setDownloadDir(e.target.value)}
+                    onBlur={(e) => {
+                      saveSettingsSilent({ download_dir: e.target.value });
+                    }}
                     placeholder="加载中..."
                     style={{ fontSize: '0.82rem', padding: '0.5rem 0.75rem' }}
                   />
                   <button
                     type="button"
                     className="btn-secondary-small"
+                    onClick={handleBrowseDir}
+                    title="Select Folder"
+                  >
+                    选择
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary-small"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/open-dir', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ dir: downloadDir }),
+                        });
+                        if (response.ok) {
+                          const result = await response.json();
+                          if (result.success) {
+                            showToast('已在文件管理器中打开保存文件夹', 'success');
+                          } else {
+                            showToast(`打开失败: ${result.error}`, 'error');
+                          }
+                        } else {
+                          showToast('目录不存在或无法打开', 'error');
+                        }
+                      } catch (err) {
+                        showToast('网络连接错误', 'error');
+                      }
+                    }}
+                    title="Open Folder"
+                  >
+                    打开
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary-small"
                     onClick={() => {
                       setDownloadDir(defaultDownloadDir);
+                      saveSettingsSilent({ download_dir: defaultDownloadDir });
                       showToast('已恢复默认下载目录', 'info');
                     }}
                     title="Restore Default"
@@ -516,10 +814,6 @@ export default function App() {
                   </button>
                 </div>
               </div>
-
-              <button className="btn-outline" onClick={() => showToast('配置已保存', 'success')} style={{ marginTop: '0.4rem' }}>
-                SAVE SETTINGS
-              </button>
             </div>
           </div>
         </aside>
@@ -592,7 +886,7 @@ export default function App() {
                 const formattedDownloaded = task.downloaded_bytes ? formatBytes(task.downloaded_bytes) : '0 B';
 
                 return (
-                  <div key={task.id} className="task-card glass-card" id={`task-${task.id}`}>
+                  <div key={task.id} className={`task-card glass-card ${task.status}`} id={`task-${task.id}`}>
                     <div className="task-header">
                       {/* Left icon wrapper */}
                       <div className="video-icon-box">
@@ -606,7 +900,7 @@ export default function App() {
                         <span className="task-title" title={task.filename || task.urls[0]}>
                           {task.filename || task.urls[0]}
                         </span>
-                        <span className="task-resolution">720p</span>
+                        <span className="task-resolution">{task.resolution || 'Auto'}</span>
                       </div>
                       
                       {/* Right side stats row */}
@@ -631,13 +925,30 @@ export default function App() {
                       </div>
 
                       {/* Logs Console accordion inline inside task stats right */}
-                      <div className="log-accordion" style={{ flexGrow: 1, minWidth: '120px', marginLeft: '1rem' }}>
-                        <div className="log-header" onClick={() => toggleLogAccordion(task.id)}>
+                      <div className="log-accordion" style={{ flexGrow: 1, minWidth: '150px', marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className="log-header" onClick={() => toggleLogAccordion(task.id)} style={{ flexGrow: 1 }}>
                           <span>Console Log</span>
                           <svg className={`log-arrow ${openLogIds.has(task.id) ? 'open' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="6 9 12 15 18 9"></polyline>
                           </svg>
                         </div>
+                        {task.logs && task.logs.length > 0 && (
+                          <button
+                            type="button"
+                            className="btn-text"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const text = task.logs.join('\n');
+                              navigator.clipboard.writeText(text)
+                                .then(() => showToast('日志已复制到剪贴板', 'success'))
+                                .catch(() => showToast('复制失败', 'error'));
+                            }}
+                            title="Copy Logs"
+                            style={{ fontSize: '0.68rem', padding: '0.1rem 0.35rem', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', color: 'var(--text-sec)', border: 'none', cursor: 'pointer' }}
+                          >
+                            复制
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -663,24 +974,34 @@ export default function App() {
 
                     {/* Action buttons inside each task card bottom left */}
                     <div className="task-actions">
-                      <button className="circular-action-btn play-btn" title="Pause/Resume">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="6" y="4" width="4" height="16"></rect>
-                          <rect x="14" y="4" width="4" height="16"></rect>
-                        </svg>
-                      </button>
-                      
-                      {!isFinished ? (
+                      {isFinished ? (
+                        <>
+                          <button className="circular-action-btn open-folder-btn" onClick={() => openTaskFolder(task.id)} title="Open Folder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                          </button>
+                          <button
+                            className="circular-action-btn delete-btn"
+                            onClick={() => {
+                              setClearedTaskIds((prev) => new Set([...prev, task.id]));
+                              showToast('已隐藏任务卡片', 'info');
+                            }}
+                            title="Hide Card"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                        </>
+                      ) : (
                         <button className="circular-action-btn cancel-btn" onClick={() => cancelTask(task.id)} title="Cancel Download">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
-                      ) : (
-                        <button className="circular-action-btn open-folder-btn" onClick={() => openTaskFolder(task.id)} title="Open Folder">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                           </svg>
                         </button>
                       )}

@@ -104,6 +104,7 @@ def make_ssl_context(
     client_certificate_password=None,
     legacy_support=False,
     use_certifi=True,
+    send_alpn=True,
 ):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = verify
@@ -115,8 +116,9 @@ def make_ssl_context(
     # Some servers may reject requests if ALPN extension is not sent. See:
     # https://github.com/python/cpython/issues/85140
     # https://github.com/yt-dlp/yt-dlp/issues/3878
-    with contextlib.suppress(NotImplementedError):
-        context.set_alpn_protocols(['http/1.1'])
+    if send_alpn:
+        with contextlib.suppress(NotImplementedError):
+            context.set_alpn_protocols(['http/1.1'])
     if verify:
         ssl_load_certs(context, use_certifi)
 

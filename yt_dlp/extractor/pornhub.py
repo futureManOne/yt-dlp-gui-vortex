@@ -31,6 +31,13 @@ class PornHubBaseIE(InfoExtractor):
     _NETRC_MACHINE = 'pornhub'
     _PORNHUB_HOST_RE = r'(?:(?P<host>pornhub(?:premium)?\.(?:com|net|org))|pornhubvybmsymdol4iibwgwtkpwmeyd6luq2gxajgjzfjvotyt5zhyd\.onion)'
 
+    def _request_webpage(self, url_or_request, *args, **kwargs):
+        if isinstance(url_or_request, str):
+            url_or_request = Request(url_or_request, extensions={'send_alpn': False})
+        elif isinstance(url_or_request, Request):
+            url_or_request.extensions['send_alpn'] = False
+        return super()._request_webpage(url_or_request, *args, **kwargs)
+
     def _download_webpage_handle(self, *args, **kwargs):
         def dl(*args, **kwargs):
             return super(PornHubBaseIE, self)._download_webpage_handle(*args, **kwargs)
