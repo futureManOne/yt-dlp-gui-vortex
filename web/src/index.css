@@ -2691,3 +2691,84 @@ select option {
     color: #1D1D1F !important;
 }
 
+/* --- Light theme detail overrides --- */
+.theme-light .glass-card {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+.theme-light .glass-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-3px) !important;
+    border-color: rgba(0, 122, 255, 0.3) !important;
+}
+
+/* Site tile text contrast adjustments */
+.theme-light .site-tile {
+    color: #1D1D1F !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+}
+
+.theme-light .site-tile:hover {
+    color: #1D1D1F !important;
+}
+
+.theme-light .site-tile .site-dot {
+    box-shadow: none !important;
+}
+
+/* Twitter/X tile fixes */
+.theme-light .x-tile {
+    --tile-hover-border: #1D1D1F !important;
+    --tile-hover-bg: rgba(0, 0, 0, 0.05) !important;
+    --tile-hover-shadow: rgba(0, 0, 0, 0.05) !important;
+}
+
+.theme-light .x-tile .site-dot {
+    background: #1D1D1F !important;
+    box-shadow: none !important;
+}
+
+/* Mini stat highlight color contrast */
+.theme-light .mini-stat-item .stat-number.primary {
+    color: #007AFF !important;
+    text-shadow: none !important;
+}
+
+.theme-light .mini-stat-item .stat-number.warning {
+    color: #FF9500 !important;
+    text-shadow: none !important;
+}
+
+.theme-light .mini-stat-item .stat-number.success {
+    color: #34C759 !important;
+    text-shadow: none !important;
+}
+
+/* Small outline buttons overrides */
+.theme-light .btn-outline-small {
+    border: 1px solid rgba(0, 122, 255, 0.3) !important;
+    color: #007AFF !important;
+}
+
+.theme-light .btn-outline-small:hover {
+    background: rgba(0, 122, 255, 0.08) !important;
+    border-color: #007AFF !important;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15) !important;
+}
+
+/* Storage gauge styles */
+.theme-light .gauge-bar-track {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.theme-light .gauge-bar-fill {
+    background: linear-gradient(90deg, #007AFF 0%, #5856D6 100%) !important;
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.2) !important;
+}
+
+.theme-light .gauge-free {
+    color: #34C759 !important;
+}
+
+
