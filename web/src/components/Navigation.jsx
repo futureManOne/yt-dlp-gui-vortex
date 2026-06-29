@@ -1,7 +1,10 @@
 import React from 'react';
 import { Download, Key, Settings, HelpCircle } from 'lucide-react';
+import { useTranslation } from '../i18n.jsx';
 
 export default function Navigation({ activeTab, setActiveTab }) {
+  const { t } = useTranslation();
+
   return (
     <nav className="nav-sidebar">
       <div className="nav-logo">
@@ -17,33 +20,34 @@ export default function Navigation({ activeTab, setActiveTab }) {
           type="button"
           className={`nav-item ${activeTab === 'download' ? 'active' : ''}`}
           onClick={() => setActiveTab('download')}
-          title="视频下载"
+          title={t('nav_download')}
         >
           <Download size={20} />
-          <span className="nav-label">下载</span>
+          <span className="nav-label">{t('nav_download')}</span>
         </button>
         <button
           type="button"
           className={`nav-item ${activeTab === 'cookies' ? 'active' : ''}`}
           onClick={() => setActiveTab('cookies')}
-          title="凭证导入"
+          title={t('nav_cookies')}
         >
           <Key size={20} />
-          <span className="nav-label">凭证</span>
+          <span className="nav-label">{t('nav_cookies')}</span>
         </button>
         <button
           type="button"
           className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
-          title="设置"
+          title={t('nav_settings')}
         >
           <Settings size={20} />
-          <span className="nav-label">设置</span>
+          <span className="nav-label">{t('nav_settings')}</span>
         </button>
       </div>
       <div className="nav-footer">
-        <HelpCircle size={18} className="nav-help-icon" title="使用说明" />
+        <HelpCircle size={18} className="nav-help-icon" title={t('nav_help_title')} />
       </div>
     </nav>
   );
 }
+

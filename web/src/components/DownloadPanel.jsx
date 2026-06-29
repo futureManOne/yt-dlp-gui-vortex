@@ -1,5 +1,6 @@
 import React from 'react';
 import { Video, X, Download } from 'lucide-react';
+import { useTranslation } from '../i18n.jsx';
 
 export default function DownloadPanel({
   urls,
@@ -12,6 +13,7 @@ export default function DownloadPanel({
   selectedResolution,
   setSelectedResolution
 }) {
+  const { t } = useTranslation();
   const urlCount = urls.split('\n').map(u => u.trim()).filter(Boolean).length;
 
   return (
@@ -33,7 +35,7 @@ export default function DownloadPanel({
           />
           <div className="logo-text">
             <h1>Vortex Downloader</h1>
-            <p>视频解析与下载</p>
+            <p>{t('brand_subtitle')}</p>
           </div>
         </div>
       </div>
@@ -42,12 +44,12 @@ export default function DownloadPanel({
       <div className="sidebar-section" style={{ borderBottom: 'none', paddingBottom: 0 }}>
         <h2 className="section-title">
           <Video size={16} className="section-icon" />
-          添加视频链接
+          {t('add_urls_title')}
         </h2>
         <div className="input-group" style={{ position: 'relative' }}>
           <textarea
             id="video-urls"
-            placeholder="在此输入视频链接，支持一行一个链接..."
+            placeholder={t('urls_placeholder')}
             rows="8"
             value={urls}
             onChange={(e) => setUrls(e.target.value)}
@@ -58,7 +60,7 @@ export default function DownloadPanel({
               type="button"
               className="btn-textarea-clear animate-hover"
               onClick={() => setUrls('')}
-              title="清除输入"
+              title={t('clear_input')}
               style={{
                 position: 'absolute',
                 right: '0.5rem',
@@ -80,7 +82,7 @@ export default function DownloadPanel({
           )}
         </div>
         <div className="textarea-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: 'var(--text-sec)', marginTop: '0.1rem', padding: '0 0.2rem' }}>
-          <span>检测到 {urlCount} 个链接</span>
+          <span>{t('detected_links', { count: urlCount })}</span>
         </div>
         <div className="btn-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.4rem' }}>
           <button
@@ -90,7 +92,7 @@ export default function DownloadPanel({
             disabled={isParsing || isSubmitting}
             style={{ width: '100%', padding: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', fontSize: '0.82rem', borderRadius: '0.375rem', minHeight: '2.5rem', margin: 0 }}
           >
-            <span>{isParsing ? '解析中...' : '解析视频 (单链接)'}</span>
+            <span>{isParsing ? t('parsing') : t('parse_single')}</span>
           </button>
           
           {/* Shortcut to start downloading immediately without parsing first */}
@@ -102,7 +104,7 @@ export default function DownloadPanel({
               disabled={isSubmitting || isParsing}
               style={{ width: '100%', padding: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', fontSize: '0.82rem', borderRadius: '99px', minHeight: '2.5rem', margin: 0 }}
             >
-              <span>直接开始下载</span>
+              <span>{t('direct_download')}</span>
               <Download size={14} />
             </button>
           )}
@@ -119,12 +121,12 @@ export default function DownloadPanel({
                   {parsedInfo.title}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: '0.15rem' }}>
-                  时长: {Math.floor(parsedInfo.duration / 60)}分{parsedInfo.duration % 60}秒
+                  {t('duration_format', { min: Math.floor(parsedInfo.duration / 60), sec: parsedInfo.duration % 60 })}
                 </div>
               </div>
             </div>
             <div className="input-group" style={{ marginBottom: '0.75rem' }}>
-              <label style={{ fontSize: '0.7rem', color: '#aaa', marginBottom: '0.25rem', display: 'block' }}>选择分辨率</label>
+              <label style={{ fontSize: '0.7rem', color: '#aaa', marginBottom: '0.25rem', display: 'block' }}>{t('select_resolution')}</label>
               <select
                 value={selectedResolution}
                 onChange={(e) => setSelectedResolution(e.target.value)}
@@ -144,7 +146,7 @@ export default function DownloadPanel({
               disabled={isSubmitting || isParsing}
               style={{ width: '100%', margin: 0, padding: '0.55rem', fontSize: '0.82rem', borderRadius: '0.375rem', minHeight: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}
             >
-              <span>{isSubmitting ? '提交中...' : '开始下载'}</span>
+              <span>{isSubmitting ? t('submitting') : t('start_download')}</span>
               <Download size={14} />
             </button>
           </div>
@@ -153,3 +155,4 @@ export default function DownloadPanel({
     </aside>
   );
 }
+
