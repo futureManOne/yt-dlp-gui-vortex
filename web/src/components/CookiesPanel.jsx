@@ -12,14 +12,14 @@ const formatBytes = (bytes, decimals = 2) => {
 };
 
 export default function CookiesPanel({
-  cookieFileInfo,
+  cookieFiles,
   isDragOver,
   handleDragEnterOver,
   handleDragLeave,
   handleCookieDrop,
   fileInputRef,
   handleCookieSelect,
-  resetCookieUpload,
+  deleteCookie,
   cookiesBrowser,
   setCookiesBrowser,
   saveSettingsSilent
@@ -38,8 +38,8 @@ export default function CookiesPanel({
         <div className="board-main-panel">
           <div className="cookie-status-bar">
             <span>当前状态:</span>
-            <span className={`status-badge-text ${cookieFileInfo ? 'success' : 'mute'}`}>
-              {cookieFileInfo ? `已载入 (${cookieFileInfo.name})` : '未加载任何凭证文件'}
+            <span className={`status-badge-text ${cookieFiles.length > 0 ? 'success' : 'mute'}`}>
+              {cookieFiles.length > 0 ? `已载入 ${cookieFiles.length} 个凭证文件` : '未加载任何凭证文件'}
             </span>
           </div>
 
@@ -54,39 +54,46 @@ export default function CookiesPanel({
               type="file"
               id="cookie-file"
               accept=".txt"
-              className={`file-input ${cookieFileInfo ? 'hidden' : ''}`}
+              className="file-input"
               ref={fileInputRef}
               onChange={handleCookieSelect}
+              multiple
             />
             
-            {!cookieFileInfo ? (
-              <div className="upload-placeholder-large">
-                <FileText size={48} className="upload-icon-large" />
-                <h3>拖拽 Netscape 格式的 cookies.txt 文件到这里</h3>
-                <p>或者点击此区域浏览本地文件进行导入</p>
-                <span className="file-limits-tip">仅支持扩展名为 .txt 的文件</span>
-              </div>
-            ) : (
-              <div className="file-info-container-large">
-                <FileText size={48} className="file-icon-large" />
-                <div className="file-meta-large">
-                  <span className="file-name">{cookieFileInfo.name}</span>
-                  <span className="file-size">大小: {formatBytes(cookieFileInfo.size)}</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn-danger-large animate-hover"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    resetCookieUpload();
-                  }}
-                >
-                  <Trash2 size={16} />
-                  <span>清除凭证</span>
-                </button>
-              </div>
-            )}
+            <div className="upload-placeholder-large" style={{ padding: '2rem 1rem' }}>
+              <FileText size={48} className="upload-icon-large" />
+              <h3>拖拽 Netscape 格式的 cookies.txt 文件到这里添加</h3>
+              <p>或者点击此区域浏览本地文件进行导入 (支持多个独立站点凭证)</p>
+              <span className="file-limits-tip">仅支持扩展名为 .txt 的文件</span>
+            </div>
           </div>
+          
+          {cookieFiles.length > 0 && (
+            <div className="cookie-files-list" style={{ marginTop: '1rem' }}>
+              <h4 style={{ marginBottom: '0.5rem', color: '#a1a1aa' }}>已导入的凭证列表</h4>
+              {cookieFiles.map((file, idx) => (
+                <div key={file.id || idx} className="file-info-container-large" style={{ marginBottom: '0.5rem', padding: '1rem' }}>
+                  <FileText size={24} className="file-icon-large" style={{ marginBottom: 0, marginRight: '1rem' }} />
+                  <div className="file-meta-large" style={{ flex: 1, textAlign: 'left', marginTop: 0 }}>
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">大小: {formatBytes(file.size)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-danger-large animate-hover"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteCookie(file.id);
+                    }}
+                    style={{ marginTop: 0 }}
+                  >
+                    <Trash2 size={16} />
+                    <span>删除</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="board-sidebar-panel">

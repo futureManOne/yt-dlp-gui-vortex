@@ -17,8 +17,7 @@ export default function App() {
   const [downloadDir, setDownloadDir] = useState('');
   const [defaultDownloadDir, setDefaultDownloadDir] = useState('');
   const [cookiesBrowser, setCookiesBrowser] = useState('');
-  const [cookieData, setCookieData] = useState('');
-  const [cookieFileInfo, setCookieFileInfo] = useState(null); // { name, size }
+  const [cookieFiles, setCookieFiles] = useState([]);
   const [selectedQuality, setSelectedQuality] = useState('1080p'); // default quality selection
   const [selectedFormat, setSelectedFormat] = useState('mkv_mp4');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,11 +76,8 @@ export default function App() {
           if (data.cookies_from_browser) {
             setCookiesBrowser(data.cookies_from_browser);
           }
-          if (data.cookie_file_info) {
-            setCookieFileInfo(data.cookie_file_info);
-          }
-          if (data.cookie_data) {
-            setCookieData(data.cookie_data);
+          if (data.cookie_files) {
+            setCookieFiles(data.cookie_files);
           }
           if (data.free_space !== undefined) {
             setFreeSpace(data.free_space);
@@ -204,9 +200,14 @@ export default function App() {
           })
         });
         if (response.ok) {
-          setCookieData(text);
-          setCookieFileInfo(fileInfo);
-          showToast('Cookie 文件保存并载入成功', 'success');
+          const result = await response.json();
+          if (result.success) {
+            fileInfo.id = result.file_id;
+            setCookieFiles((prev) => [...prev, fileInfo]);
+            showToast('Cookie 文件保存并载入成功', 'success');
+          } else {
+            showToast('保存 Cookie 到服务器失败', 'error');
+          }
         } else {
           showToast('保存 Cookie 到服务器失败', 'error');
         }
@@ -216,17 +217,20 @@ export default function App() {
     };
     reader.onerror = () => {
       showToast('无法读取文件内容', 'error');
-      resetCookieUpload();
+      if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);
   };
 
-  const resetCookieUpload = async () => {
+  const deleteCookie = async (fileId) => {
     try {
-      const response = await fetch('/api/cookie/clear', { method: 'POST' });
+      const response = await fetch('/api/cookie/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: fileId })
+      });
       if (response.ok) {
-        setCookieData('');
-        setCookieFileInfo(null);
+        setCookieFiles((prev) => prev.filter(c => c.id !== fileId));
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -266,7 +270,6 @@ export default function App() {
         },
         body: JSON.stringify({
           url: parsedUrls[0],
-          cookie_data: cookieData,
           cookies_from_browser: cookiesBrowser,
         }),
       });
@@ -304,7 +307,6 @@ export default function App() {
     try {
       const payload = {
         urls: parsedUrls,
-        cookie_data: cookieData,
         cookies_from_browser: cookiesBrowser,
         download_dir: downloadDir,
         quality: selectedQuality,
@@ -540,14 +542,14 @@ export default function App() {
         {/* Cookies Import View */}
         {activeTab === 'cookies' && (
           <CookiesPanel
-            cookieFileInfo={cookieFileInfo}
+            cookieFiles={cookieFiles}
             isDragOver={isDragOver}
             handleDragEnterOver={handleDragEnterOver}
             handleDragLeave={handleDragLeave}
             handleCookieDrop={handleCookieDrop}
             fileInputRef={fileInputRef}
             handleCookieSelect={handleCookieSelect}
-            resetCookieUpload={resetCookieUpload}
+            deleteCookie={deleteCookie}
             cookiesBrowser={cookiesBrowser}
             setCookiesBrowser={setCookiesBrowser}
             saveSettingsSilent={saveSettingsSilent}

@@ -52,8 +52,13 @@ def get_config_dir():
 def get_config_path():
     return os.path.join(get_config_dir(), 'vortex_config.json')
 
-def get_cookies_path():
-    return os.path.join(get_config_dir(), 'vortex_cookies.txt')
+def get_cookies_dir():
+    dir_path = os.path.join(get_config_dir(), 'vortex_cookies')
+    os.makedirs(dir_path, exist_ok=True)
+    return dir_path
+
+def get_cookie_file_path(file_id):
+    return os.path.join(get_cookies_dir(), f"{file_id}.txt")
 
 def load_config():
     config_path = get_config_path()
@@ -62,7 +67,7 @@ def load_config():
         "quality": "1080p",
         "format": "mkv_mp4",
         "cookies_from_browser": "",
-        "cookie_file_info": None
+        "cookie_files": []
     }
     if os.path.exists(config_path):
         try:
@@ -76,8 +81,14 @@ def load_config():
                     default_config['format'] = data['format']
                 if 'cookies_from_browser' in data:
                     default_config['cookies_from_browser'] = data['cookies_from_browser']
-                if 'cookie_file_info' in data:
-                    default_config['cookie_file_info'] = data['cookie_file_info']
+                
+                # Migrate old format if exists
+                if 'cookie_file_info' in data and data['cookie_file_info']:
+                    old_info = data['cookie_file_info']
+                    old_info['id'] = 'legacy_cookie'
+                    default_config['cookie_files'].append(old_info)
+                elif 'cookie_files' in data:
+                    default_config['cookie_files'] = data['cookie_files']
         except Exception as e:
             print(f"Error loading config: {e}")
     return default_config
@@ -97,6 +108,42 @@ def save_config(config_data):
     except Exception as e:
         print(f"Error saving config: {e}")
         return False
+
+def merge_cookies():
+    cookie_dir = get_cookies_dir()
+    merged_lines = []
+    
+    if os.path.exists(cookie_dir):
+        for filename in os.listdir(cookie_dir):
+            if filename.endswith(".txt"):
+                filepath = os.path.join(cookie_dir, filename)
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            # Keep HttpOnly cookies and regular cookie lines
+                            if line.strip():
+                                if not line.startswith('#') or line.startswith('#HttpOnly_'):
+                                    merged_lines.append(line.strip())
+                except Exception as e:
+                    print(f"Error reading cookie file {filepath}: {e}")
+                    
+    if not merged_lines:
+        return None
+        
+    # Write to a temp file
+    temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'temp')
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_cookie_path = os.path.join(temp_dir, f'merged_cookies_{uuid.uuid4().hex}.txt')
+    
+    try:
+        with open(temp_cookie_path, 'w', encoding='utf-8') as f:
+            f.write("# Netscape HTTP Cookie File\n")
+            for line in merged_lines:
+                f.write(line + "\n")
+        return temp_cookie_path
+    except Exception as e:
+        print(f"Error writing merged cookies: {e}")
+        return None
 
 # Global task storage
 TASKS = {}
@@ -219,11 +266,7 @@ def download_worker(task_id, urls, cookie_data, cookies_from_browser, download_d
     temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'temp')
     
     try:
-        if cookie_data and cookie_data.strip():
-            os.makedirs(temp_dir, exist_ok=True)
-            cookie_file_path = os.path.join(temp_dir, f'cookies_{task_id}.txt')
-            with open(cookie_file_path, 'w', encoding='utf-8') as f:
-                f.write(cookie_data)
+        cookie_file_path = merge_cookies()
                 
         import yt_dlp
         
@@ -239,9 +282,9 @@ def download_worker(task_id, urls, cookie_data, cookies_from_browser, download_d
         
         # Check if a custom height (resolution) was selected via video parsing
         if selected_height is not None:
-            selected_height = int(selected_height)
-            if selected_height == 0:  # Audio Only
-                ydl_opts['format'] = 'bestaudio/best'
+            if str(selected_height).startswith('audio_'):
+                fmt_id = str(selected_height).split('audio_')[1]
+                ydl_opts['format'] = fmt_id
                 if format_sel == 'mp3':
                     ydl_opts['postprocessors'] = [{
                         'key': 'FFmpegExtractAudio',
@@ -249,13 +292,23 @@ def download_worker(task_id, urls, cookie_data, cookies_from_browser, download_d
                         'preferredquality': '192',
                     }]
             else:
-                if format_sel == 'mp4':
-                    ydl_opts['format'] = f'bestvideo[ext=mp4][height={selected_height}]+bestaudio[ext=m4a]/best[ext=mp4][height={selected_height}]/best[height={selected_height}]'
-                elif format_sel == 'mkv':
-                    ydl_opts['format'] = f'bestvideo[height={selected_height}]+bestaudio/best[height={selected_height}]'
-                    ydl_opts['merge_output_format'] = 'mkv'
-                else: # mkv_mp4
-                    ydl_opts['format'] = f'bestvideo[height={selected_height}]+bestaudio/best[height={selected_height}]'
+                selected_height = int(selected_height)
+                if selected_height == 0:  # Audio Only
+                    ydl_opts['format'] = 'bestaudio/best'
+                    if format_sel == 'mp3':
+                        ydl_opts['postprocessors'] = [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': 'mp3',
+                            'preferredquality': '192',
+                        }]
+                else:
+                    if format_sel == 'mp4':
+                        ydl_opts['format'] = f'bestvideo[ext=mp4][height={selected_height}]+bestaudio[ext=m4a]/best[ext=mp4][height={selected_height}]/best[height={selected_height}]'
+                    elif format_sel == 'mkv':
+                        ydl_opts['format'] = f'bestvideo[height={selected_height}]+bestaudio/best[height={selected_height}]'
+                        ydl_opts['merge_output_format'] = 'mkv'
+                    else: # mkv_mp4
+                        ydl_opts['format'] = f'bestvideo[height={selected_height}]+bestaudio/best[height={selected_height}]'
         else:
             # Parse quality height limit (default fallback)
             height_limit = 1080
@@ -399,15 +452,7 @@ class WebHandler(SimpleHTTPRequestHandler):
                 
                 import yt_dlp
                 
-                # Setup temp cookie file if any
-                cookie_file_path = None
-                temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'temp')
-                
-                if cookie_data and cookie_data.strip():
-                    os.makedirs(temp_dir, exist_ok=True)
-                    cookie_file_path = os.path.join(temp_dir, f'cookies_parse_{int(time.time())}.txt')
-                    with open(cookie_file_path, 'w', encoding='utf-8') as f:
-                        f.write(cookie_data)
+                cookie_file_path = merge_cookies()
                         
                 ydl_opts = {
                     'skip_download': True,
@@ -434,9 +479,45 @@ class WebHandler(SimpleHTTPRequestHandler):
                 # Process results
                 formats = info_dict.get('formats', [])
                 heights = set()
+                
+                video_formats = []
+                audio_formats = []
+                
                 for f in formats:
-                    if f.get('vcodec') != 'none' and f.get('height'):
-                        heights.add(int(f.get('height')))
+                    has_video = f.get('vcodec') != 'none' and f.get('vcodec') is not None
+                    has_audio = f.get('acodec') != 'none' and f.get('acodec') is not None
+                    
+                    fmt_obj = {
+                        "format_id": f.get('format_id'),
+                        "ext": f.get('ext'),
+                        "filesize": f.get('filesize') or f.get('filesize_approx') or 0,
+                        "format_note": f.get('format_note', '')
+                    }
+                    
+                    if has_video:
+                        h = f.get('height')
+                        if h:
+                            heights.add(int(h))
+                        v_obj = dict(fmt_obj)
+                        v_obj.update({
+                            "height": h,
+                            "fps": f.get('fps'),
+                            "vcodec": f.get('vcodec'),
+                            "has_audio": has_audio
+                        })
+                        video_formats.append(v_obj)
+                        
+                    if has_audio and not has_video: # pure audio
+                        a_obj = dict(fmt_obj)
+                        a_obj.update({
+                            "abr": f.get('abr') or 0,
+                            "acodec": f.get('acodec')
+                        })
+                        audio_formats.append(a_obj)
+                
+                # Sort and filter unique video formats
+                video_formats.sort(key=lambda x: (x.get('height') or 0, x.get('fps') or 0), reverse=True)
+                audio_formats.sort(key=lambda x: x.get('abr') or 0, reverse=True)
                 
                 sorted_heights = sorted(list(heights), reverse=True)
                 
@@ -460,7 +541,10 @@ class WebHandler(SimpleHTTPRequestHandler):
                     "title": info_dict.get('title', 'Unknown Title'),
                     "thumbnail": info_dict.get('thumbnail', ''),
                     "duration": info_dict.get('duration', 0),
-                    "resolutions": resolutions
+                    "description": info_dict.get('description', ''),
+                    "resolutions": resolutions,
+                    "video_formats": video_formats,
+                    "audio_formats": audio_formats
                 })
             except Exception as e:
                 if 'cookie_file_path' in locals() and cookie_file_path and os.path.exists(cookie_file_path):
@@ -537,6 +621,29 @@ class WebHandler(SimpleHTTPRequestHandler):
                 self.send_json_response({"success": True, "task_id": task_id})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, 500)
+
+        elif self.path == '/api/ai/summarize':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                title = data.get('title', '')
+                description = data.get('description', '')
+                
+                # Mock AI response to simulate intelligent summary
+                time.sleep(2) # Simulate processing delay
+                
+                summary = f"【AI 智能摘要】\n该视频标题为《{title}》。\n"
+                if description:
+                    summary += f"根据视频描述，这可能是一个包含丰富细节的视频。AI 判断此视频具有较高的观看价值。\n"
+                summary += "您可以通过下载获取完整内容。此摘要由本地模拟大模型生成，未来可配置为调用云端 API。"
+                
+                self.send_json_response({
+                    "success": True,
+                    "summary": summary
+                })
+            except Exception as e:
+                self.send_json_response({"success": False, "error": str(e)}, 500)
                 
         elif self.path.startswith('/api/task/') and self.path.endswith('/cancel'):
             parts = self.path.split('/')
@@ -592,25 +699,47 @@ class WebHandler(SimpleHTTPRequestHandler):
                 cookie_data = data.get('cookie_data', '')
                 cookie_file_info = data.get('cookie_file_info', None)
                 
-                # Save cookie file content
-                cookies_path = get_cookies_path()
-                os.makedirs(os.path.dirname(cookies_path), exist_ok=True)
-                with open(cookies_path, 'w', encoding='utf-8') as f:
-                    f.write(cookie_data)
-                
-                # Save cookie metadata to config
-                success = save_config({"cookie_file_info": cookie_file_info})
-                self.send_json_response({"success": success})
+                if cookie_file_info:
+                    file_id = uuid.uuid4().hex
+                    cookie_file_info['id'] = file_id
+                    
+                    # Save cookie file content
+                    cookies_path = get_cookie_file_path(file_id)
+                    with open(cookies_path, 'w', encoding='utf-8') as f:
+                        f.write(cookie_data)
+                    
+                    # Save cookie metadata to config
+                    current_config = load_config()
+                    cookie_files = current_config.get('cookie_files', [])
+                    cookie_files.append(cookie_file_info)
+                    
+                    success = save_config({"cookie_files": cookie_files})
+                    self.send_json_response({"success": success, "file_id": file_id})
+                else:
+                    self.send_json_response({"success": False, "error": "Missing cookie file info"}, 400)
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, 500)
                 
-        elif self.path == '/api/cookie/clear':
+        elif self.path == '/api/cookie/delete':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
             try:
-                cookies_path = get_cookies_path()
-                if os.path.exists(cookies_path):
-                    os.remove(cookies_path)
-                success = save_config({"cookie_file_info": None})
-                self.send_json_response({"success": success})
+                data = json.loads(post_data.decode('utf-8'))
+                file_id = data.get('id', '')
+                
+                if file_id:
+                    cookies_path = get_cookie_file_path(file_id)
+                    if os.path.exists(cookies_path):
+                        os.remove(cookies_path)
+                        
+                    current_config = load_config()
+                    cookie_files = current_config.get('cookie_files', [])
+                    cookie_files = [c for c in cookie_files if c.get('id') != file_id]
+                    
+                    success = save_config({"cookie_files": cookie_files})
+                    self.send_json_response({"success": success})
+                else:
+                    self.send_json_response({"success": False, "error": "Missing ID"}, 400)
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, 500)
 
@@ -672,14 +801,6 @@ class WebHandler(SimpleHTTPRequestHandler):
                     self.send_json_response({"error": "无效的接口路径"}, 400)
             elif self.path == '/api/config':
                 cfg = load_config()
-                cookie_data = ""
-                cookies_path = get_cookies_path()
-                if os.path.exists(cookies_path):
-                    try:
-                        with open(cookies_path, 'r', encoding='utf-8') as f:
-                            cookie_data = f.read()
-                    except Exception:
-                        pass
                 
                 download_dir = cfg.get('download_dir', os.getcwd())
                 free_space = None
@@ -699,8 +820,7 @@ class WebHandler(SimpleHTTPRequestHandler):
                     "quality": cfg.get('quality', '1080p'),
                     "format": cfg.get('format', 'mkv_mp4'),
                     "cookies_from_browser": cfg.get('cookies_from_browser', ''),
-                    "cookie_file_info": cfg.get('cookie_file_info', None),
-                    "cookie_data": cookie_data,
+                    "cookie_files": cfg.get('cookie_files', []),
                     "free_space": free_space,
                     "total_space": total_space
                 }
