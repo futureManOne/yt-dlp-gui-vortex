@@ -39,3 +39,10 @@ The system SHALL present each task's logs in a styled retro-modern terminal box 
 - **WHEN** user clicks the "Copy Logs" button on a task console
 - **THEN** the system copies all logs of that task to the clipboard and shows a success toast
 
+### Requirement: Download Panel Video Parsing Display
+The system MUST display the parsed video details gracefully in the Download Panel.
+
+#### Scenario: User views parsed video information
+- **WHEN** the video is successfully parsed
+- **THEN** the system SHALL display the video thumbnail, title, duration, an advanced dropdown for all formats (video vs audio), and an AI Summary button inside a preview card.
+

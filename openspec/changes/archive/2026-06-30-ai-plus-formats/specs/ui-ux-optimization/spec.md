@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Download Panel Video Parsing Display
 The system MUST display the parsed video details gracefully in the Download Panel.
