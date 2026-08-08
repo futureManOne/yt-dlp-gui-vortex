@@ -3,6 +3,8 @@
 cookies
 *cookies.txt
 vortex_cookies/
+vortex_config.json
+.vortex_write_test
 .netrc
 .gemini
 # Downloaded
