@@ -67,21 +67,24 @@ jobs:
         run: |
           pyinstaller vortex.spec
 
-      - name: Rename Output Binary (Windows)
-        if: runner.os == 'Windows'
+      - name: Move Output Binary
+        shell: python
         run: |
-          rename dist\Vortex-Downloader.exe Vortex-Downloader-Windows-x64.exe
-
-      - name: Rename Output Binary (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          mv dist/Vortex-Downloader ${{ matrix.asset_name }}
+          import os, shutil, sys
+          is_win = sys.platform == 'win32'
+          src = os.path.join('dist', 'Vortex-Downloader.exe' if is_win else 'Vortex-Downloader')
+          dst = '${{ matrix.asset_name }}'
+          if os.path.exists(src):
+              shutil.move(src, dst)
+              print(f"Successfully moved {src} to {dst}")
+          else:
+              raise FileNotFoundError(f"Source file {src} not found in dist. Files in dist: {os.listdir('dist') if os.path.exists('dist') else 'dist directory missing'}")
 
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: ${{ runner.os == 'Windows' && 'Vortex-Downloader-Windows-x64.exe' || matrix.asset_name }}
+          path: ${{ matrix.asset_name }}
 
   create-release:
     needs: build-desktop-apps
