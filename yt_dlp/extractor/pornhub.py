@@ -40,6 +40,13 @@ class PornHubBaseIE(InfoExtractor):
             'Referer': f'https://www.{host}/',
         }
 
+    def _request_webpage(self, url_or_request, *args, **kwargs):
+        if isinstance(url_or_request, str):
+            url_or_request = Request(url_or_request, extensions={'send_alpn': False})
+        elif isinstance(url_or_request, Request):
+            url_or_request.extensions['send_alpn'] = False
+        return super()._request_webpage(url_or_request, *args, **kwargs)
+
     def _download_webpage_handle(self, *args, **kwargs):
         def dl(*args, **kwargs):
             return super(PornHubBaseIE, self)._download_webpage_handle(*args, **kwargs)

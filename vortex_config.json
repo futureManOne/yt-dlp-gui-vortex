@@ -1,0 +1,13 @@
+{
+    "download_dir": "F:\\github\\yt-dlp",
+    "quality": "1080p",
+    "format": "mkv_mp4",
+    "cookies_from_browser": "",
+    "cookie_files": [
+        {
+            "name": "www.bilibili.com_cookies (1).txt",
+            "size": 2511,
+            "id": "legacy_cookie"
+        }
+    ]
+}

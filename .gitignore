@@ -2,8 +2,9 @@
 *.conf
 cookies
 *cookies.txt
+vortex_cookies/
 .netrc
-
+.gemini
 # Downloaded
 *.annotations.xml
 *.aria2
@@ -71,6 +72,7 @@ wine-py2exe/
 py2exe.log
 build/
 dist/
+!web/dist/
 zip/
 tmp/
 venv/
