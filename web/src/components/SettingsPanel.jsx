@@ -174,6 +174,41 @@ export default function SettingsPanel({
           </div>
         </div>
 
+        {/* Engine Management */}
+        <div className="settings-section-card">
+          <h3><Settings size={16} className="title-sub-icon" /> 核心解析引擎 (yt-dlp Engine)</h3>
+          <div className="settings-row">
+            <div className="input-field-group">
+              <label>内核状态与在线升级</label>
+              <div className="dir-input-row">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={async () => {
+                    showToast('正在检查并在线升级下载内核...', 'info');
+                    try {
+                      const res = await fetch('/api/engine/update', { method: 'POST' });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast('内核已成功升级至最新发布版本！', 'success');
+                      } else {
+                        showToast(`升级失败: ${data.error || '未知错误'}`, 'error');
+                      }
+                    } catch (e) {
+                      showToast('更新接口连接失败', 'error');
+                    }
+                  }}
+                >
+                  <span>在线一键升级 yt-dlp 内核</span>
+                </button>
+              </div>
+              <span className="input-tip">
+                架构说明：本应用 UI 已与 yt-dlp 底层解耦。当目标网站升级防爬虫机制时，可直接点击此按钮一键升级最新内核规则，无需重新安装应用。
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="settings-footer-actions">
           <button
             type="button"

@@ -777,6 +777,17 @@ class WebHandler(SimpleHTTPRequestHandler):
                 self.send_json_response({"success": success})
             except Exception as e:
                 self.send_json_response({"success": False, "error": str(e)}, 500)
+
+        elif self.path == '/api/engine/update':
+            try:
+                import subprocess
+                res = subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"], capture_output=True, text=True, timeout=120)
+                if res.returncode == 0:
+                    self.send_json_response({"success": True, "log": res.stdout})
+                else:
+                    self.send_json_response({"success": False, "error": res.stderr}, 500)
+            except Exception as e:
+                self.send_json_response({"success": False, "error": str(e)}, 500)
         else:
             self.send_response(404)
             self.end_headers()
@@ -801,6 +812,14 @@ class WebHandler(SimpleHTTPRequestHandler):
                     self.send_json_response({"error": "无效的接口路径"}, 400)
             elif self.path == '/api/config':
                 cfg = load_config()
+                self.send_json_response(cfg)
+            elif self.path == '/api/engine/version':
+                try:
+                    import yt_dlp.version
+                    ver = getattr(yt_dlp.version, '__version__', 'Unknown')
+                    self.send_json_response({"version": ver})
+                except Exception as e:
+                    self.send_json_response({"version": "Unknown", "error": str(e)})
                 
                 download_dir = cfg.get('download_dir', os.getcwd())
                 free_space = None
